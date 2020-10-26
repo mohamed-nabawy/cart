@@ -1,22 +1,54 @@
 <?php
+
+namespace Src\Controller;
+
 require __DIR__ . "/../../config.php";
 
 class CartController {
 
     private $requestMethod;
+    private $test;
+    private $currency;
+    private $products;
 
-    public function __construct($requestMethod)
+    public function __construct($requestMethod, $test = FALSE)
     {
         $this->requestMethod = $requestMethod;
+        $this->test = $test;
+    }
+
+    private function getCurrency(){
+        return $this->currency;
+    }
+
+    private function setCurrency($currency){
+        if (isset($currency)) {
+         $this->currency = $currency;
+        }else{
+            $this->currency = "USD";
+        }
+    }
+
+    private function getProducts(){
+        return $this->products;
+    }
+
+    private function setProducts(string $products){
+        if (isset($products)) {
+            $products = explode(" ", $products);
+            $this->products = $products;
+        } else {
+            $this->products = [];
+        }
     }
 
     public function processRequest()
     {
         switch ($this->requestMethod) {
             case 'GET':
-                if(isset($_GET["product"])){
+                if (isset($_GET["product"])) {
                     $response = $this->getProductPrice($_GET["product"]);
-                }else{
+                } else {
                     $response = $this->getAllProducts();
                 }
                 break;
@@ -27,13 +59,17 @@ class CartController {
                 $response = $this->notFoundResponse();
                 break;
         }
-        header($response['status_code_header']);
-        if ($response['body']) {
-            echo $response['body'];
+        if(!$this->test) {
+            header($response['status_code_header']);
+            if ($response['body']) {
+                echo $response['body'];
+            }
+        } else {
+            return $response;
         }
     }
 
-    private function getAllProducts()
+    public function getAllProducts()
     {
         $result = PRODUCTS;
         $response['status_code_header'] = 'HTTP/1.1 200 OK';
@@ -53,25 +89,30 @@ class CartController {
         return $response;
     }
 
-    private function getCart()
-    {
+    private function getBody(){
         $input = (array) json_decode(file_get_contents('php://input'), TRUE);
-        if (! $this->validateInput($input)) {
+        return $input;
+    }
+
+    public function getCart($input =[])
+    {   if(!$this->test){
+            $input = $this->getBody();
+        }
+        if (!$this->validateInput($input)) {
             return $this->unprocessableEntityResponse();
         }
-        $products = $input["products"];
-        if (isset($input['currency'])) {
-           $currency = $input['currency'];
-        }else{
-            $currency = "USD";
-        }
-        $products = explode(" ", $products);
+        //set currency
+        $this->setCurrency($input['currency']);
+        $currency = $this->getCurrency();
+        //set products array
+        $this->setProducts($input["products"]);
+        $products = $this->getProducts();
+        //initialize some helper variables
         $subtotal = 0;
-        $subtotal2 = 0;
         $discounts = [];
-        $tshirts = 0;
-        $jackets = 0;
         $discounts_value = 0;
+        $sold_tshirts = 0;
+        $sold_jackets = 0;
         foreach ($products as $key => $product) {
             $product = trim($product);
             //apply currency change
@@ -79,27 +120,24 @@ class CartController {
             //calc subtotal alone
             $subtotal += $unit_price;
             //apply discount 10% off shoes
-            if($product == "Shoes"){
-                $discounts_value += SHOES_DISCOUNT;
-                $discounts[] = "10% off shoes: -$2.499";
-            }
-            //apply 2 t-shirts & jacket offer
-            else if($product == "T-shirt"){
-                $tshirts++;
-                $subtotal2 += $unit_price;
-            }
-            else if($product == "Jacket"){
-                $jackets++;
-                if(floor($tshirts/2) >= $jackets){
-                    $discounts_value += TWO_TSHIRTS_OFFERS["Jacket"];
-                    $discounts[] = "50% off jacket: -$9.995";
-                }else{
-                    $subtotal2 += $unit_price;
-                }
-            }else{
-                $subtotal2 += $unit_price;
+            switch ($product) {
+                case 'Shoes':
+                    $discounts_value += SHOES_DISCOUNT;
+                    $discounts[] = "10% off shoes: -$2.499";
+                    break;
+                case 'T-shirt'://apply 2 t-shirts & jacket offer
+                    $sold_tshirts++;
+                    break;
+                case 'Jacket':
+                    $sold_jackets++;
+                    if(floor($sold_tshirts/2) >= $sold_jackets){
+                        $discounts_value += TWO_TSHIRTS_OFFERS["Jacket"];
+                        $discounts[] = "50% off jacket: -$9.995";
+                    }
+                    break;
             }
         }
+
         $discounts = array_unique($discounts);
         $total = ($subtotal * (1+TAX)) + $discounts_value;
         $cart = [
@@ -130,6 +168,7 @@ class CartController {
                 }
             }
         }
+        
         //check if currency supported and valid
         if (isset($input['currency'])) {
             $currency = $input['currency'];
