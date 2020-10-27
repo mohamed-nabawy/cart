@@ -149,13 +149,18 @@ POST '/cart'
 
 Errors:
 
+in case of a request sent to any of the api endpoints and its method not supported, it will respond with a 400 status code and body with the following:
+null
+
 in case of a request sent to any of the api endpoints and it's not exist, it will respond with a 404 status code and body with the following:
 null
 
-in case of a request sent to any of the api endpoints and it's not processable on the server, it will respond with a 422 status code and body with the following json object:
+in case of a request sent to any of the api endpoints and its input not processable on the server, it will respond with a 422 status code and body with the following json object:
 {
 	'error' => 'Invalid input'
 }
+
+
 ```
 
 
