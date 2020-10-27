@@ -1,5 +1,6 @@
 <?php
 require "../src/Controller/CartController.php";
+use Src\Controller\CartController; 
 
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
@@ -13,7 +14,7 @@ $uri = explode( '/', $uri );
 // all of our endpoints start with /person
 // everything else results in a 404 Not Found
 
-if ($uri[1] !== 'createCart') {
+if ($uri[1] !== 'cart') {
     header("HTTP/1.1 404 Not Found");
     exit();
 }

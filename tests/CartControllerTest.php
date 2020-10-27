@@ -1,5 +1,5 @@
 <?php 
-require __DIR__ . "/../Src/Controller/CartController.php";
+require_once __DIR__ . "/../Src/Controller/CartController.php";
 
 use PHPUnit\Framework\TestCase;
 use Src\Controller\CartController;
@@ -24,8 +24,9 @@ final class CartControllerTest extends TestCase
             'HTTP/1.1 200 OK',
             $response["status_code_header"]
         );
+        $expected = ["Products" => PRODUCTS, "Currency"=>"USD"];
         $this->assertEquals(
-            PRODUCTS,
+            $expected,
             $body
         );
     }
@@ -33,14 +34,16 @@ final class CartControllerTest extends TestCase
     public function testGetAllProducts(): void
     {
         $instance = new CartController("GET", TRUE);
+        $instance->setCurrency("USD");
         $response = $instance->getAllProducts();
         $body = json_decode($response["body"], TRUE);
         $this->assertEquals(
             'HTTP/1.1 200 OK',
             $response["status_code_header"]
         );
+        $expected = ["Products" => PRODUCTS, "Currency"=>"USD"];
         $this->assertEquals(
-            PRODUCTS,
+            $expected,
             $body
         );
     }
