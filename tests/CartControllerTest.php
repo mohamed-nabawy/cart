@@ -63,7 +63,74 @@ final class CartControllerTest extends TestCase
         );
     }
     
+    public function testGetSingleProductPrice(): void
+    {   
+        $instance = new CartController("GET", TRUE);
+        $instance->setCurrency("USD");
+        $response = $instance->getSingleProductPrice("T-shirt");
+        $body = json_decode($response["body"], TRUE);
+        $this->assertEquals(
+            'HTTP/1.1 200 OK',
+            $response["status_code_header"]
+        );
+    }
 
+    public function testGetSingleProductPriceNotFound(): void
+    {   
+        $instance = new CartController("GET", TRUE);
+        $instance->setCurrency("USD");
+        $response = $instance->getSingleProductPrice("T-shirts");
+        $body = json_decode($response["body"], TRUE);
+        $this->assertEquals(
+            'HTTP/1.1 404 Not Found',
+            $response["status_code_header"]
+        );
+    }
+
+    public function testValidCurrency(): void
+    {
+        $instance = new CartController("GET", TRUE);
+        $currency = "USD";
+        $response = $instance->isValidCurrency($currency);
+        $this->assertEquals(
+            true,
+            $response
+        );
+    }
+
+    public function testNotValidCurrency(): void
+    {
+        $instance = new CartController("GET", TRUE);
+        $currency = "SSD";
+        $response = $instance->isValidCurrency($currency);
+        $this->assertEquals(
+            false,
+            $response
+        );
+    }
+
+    public function testValidProduct(): void
+    {
+        $instance = new CartController("GET", TRUE);
+        $product = "Pants";
+        $response = $instance->isValidProducts($product);
+        $this->assertEquals(
+            true,
+            $response
+        );
+    }
+
+    public function testNotValidProduct(): void
+    {
+        $instance = new CartController("GET", TRUE);
+        $product = "product";
+        $response = $instance->isValidProducts($product);
+        $this->assertEquals(
+            false,
+            $response
+        );
+    }
+    
     public function testGetCartTotal(): void
     {   $input = ["products"=> "T-shirt T-shirt Shoes Jacket", "currency" => "USD"];
         $instance = new CartController("POST", TRUE);
@@ -96,7 +163,7 @@ final class CartControllerTest extends TestCase
         $response = $instance->processRequest();
         $body = json_decode($response["body"], TRUE);
         $this->assertEquals(
-            'HTTP/1.1 404 Not Found',
+            'HTTP/1.1 400 Bad Request',
             $response["status_code_header"]
         );
     }

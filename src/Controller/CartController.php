@@ -48,7 +48,6 @@ class CartController
             $this->_currency = "USD";
         }
     }
-
     /**
      * Sets cart products.
      * 
@@ -59,7 +58,6 @@ class CartController
     {
         return $this->_products;
     }
-
     /**
      * Sets products from user into cart.
      * 
@@ -75,7 +73,6 @@ class CartController
             $this->_products = [];
         }
     }
-
     /**
      * Handles http requests.
      * 
@@ -84,7 +81,6 @@ class CartController
      */
     public function processRequest()
     {
-        
         switch ($this->_requestMethod) {
         case 'GET':
             $this->setCurrency(isset($_GET["currency"]) ? $_GET["currency"]: "USD" );
@@ -99,7 +95,7 @@ class CartController
             $response = $this->getCart();
             break;
         default:
-            $response = $this->notFoundResponse();
+            $response = $this->badRequestResponse();
             break;
         }
         if (!$this->_test) {
@@ -125,7 +121,12 @@ class CartController
         $response['body'] = json_encode($result);
         return $response;
     }
-
+    /**
+     * maps products prices according to currency.  
+     * 
+     * @param string $price
+     *  The product price.
+     */
     private function map_price_currency(string $price)
     {
         $currency = $this->getCurrency();
@@ -140,7 +141,7 @@ class CartController
      * @return array $response
      *   A response array that contains the http response.
      */
-    private function getSingleProductPrice(string $product)
+    public function getSingleProductPrice(string $product)
     {
         $currency = $this->getCurrency();
         if (isset(PRODUCTS[$product])) {
@@ -152,7 +153,6 @@ class CartController
         }
         return $response;
     }
-
     /**
      * Gets post body value.
      * 
@@ -164,7 +164,6 @@ class CartController
         $input = (array) json_decode(file_get_contents('php://input'), true);
         return $input;
     }
-
     /**
      * Calculate cart values.
      * 
@@ -205,7 +204,7 @@ class CartController
             case 'Shoes':
                 $shoes_discount_value = SHOES_DISCOUNT * CURRENCIES[$currency];
                 $discounts_value += $shoes_discount_value;
-                $discounts[] = "10% off shoes: -" . $shoes_discount_value . $currency;
+                $discounts[] = "10% off shoes: " . $shoes_discount_value . $currency;
                 break;
             case 'T-shirt'://apply 2 t-shirts & jacket offer
                 $sold_tshirts++;
@@ -215,7 +214,7 @@ class CartController
                 if (floor($sold_tshirts/2) >= $sold_jackets) {
                     $jacket_discount_value = TWO_TSHIRTS_OFFERS["Jacket"] * CURRENCIES[$currency];
                     $discounts_value += $jacket_discount_value;
-                    $discounts[] = "50% off jacket: -" . $jacket_discount_value . $currency;
+                    $discounts[] = "50% off jacket: " . $jacket_discount_value . $currency;
                 }
                 break;
             }
@@ -236,7 +235,6 @@ class CartController
         $response['body'] = json_encode($cart);
         return $response;
     }
-
     /**
      * Validates user input.
      * 
@@ -246,7 +244,7 @@ class CartController
      * @return bool 
      * Indicates if the user request/input is valid or not.
      */
-    private function isValidCurrency(string $currency)
+    public function isValidCurrency(string $currency)
     {
         //check if currency supported and valid
         if (isset($currency)) {
@@ -257,8 +255,7 @@ class CartController
         }
         return false;
     }
-
-    private function isValidProducts(string $products)
+    public function isValidProducts(string $products)
     {
         //check if products exist & valid
         if (!isset($products) || !is_string($products)) {
@@ -274,7 +271,6 @@ class CartController
         }
         return true;
     }
-
     /**
      * Return error for incorrect input.
      * 
@@ -300,6 +296,18 @@ class CartController
     private function notFoundResponse()
     {
         $response['status_code_header'] = 'HTTP/1.1 404 Not Found';
+        $response['body'] = null;
+        return $response;
+    }
+     /**
+     * Return error for bad requests.
+     * 
+     * @return array $response 
+     * Structures 400 error response for bad requests.
+     */
+    private function badRequestResponse()
+    {
+        $response['status_code_header'] = 'HTTP/1.1 400 Bad Request';
         $response['body'] = null;
         return $response;
     }
